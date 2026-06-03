@@ -728,17 +728,19 @@ export function renderArticle(
 
       const iconWidth = ordered ? orderedMarkerWidth : template.category === "neo-brutalism" ? 32 : 24;
 
-      // Extremely robust float layout for WeChat Official Accounts
-      return `<section style="display: block; clear: both; margin-bottom: 12px;">
-        <section style="float: left; width: ${iconWidth}px; box-sizing: border-box; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">
-          <section style="text-align: left;">${icon}</section>
-        </section>
-        <section style="margin-left: ${iconWidth}px; box-sizing: border-box; overflow: hidden;">
-          <section style="display: block; overflow: hidden;">
-            ${inner}
-          </section>
-        </section>
-        <section style="display: block; clear: both; height: 0; line-height: 0; font-size: 0; overflow: hidden;"></section>
+      return `<section style="display: block; margin-bottom: 12px; background-color: ${template.backgroundColor};">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; padding: 0; background-color: ${template.backgroundColor};">
+          <tbody>
+            <tr>
+              <td width="${iconWidth}" valign="top" style="width: ${iconWidth}px; min-width: ${iconWidth}px; max-width: ${iconWidth}px; padding: 0; margin: 0; border: none; vertical-align: top; background-color: ${template.backgroundColor}; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">
+                <section style="text-align: left; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">${icon}</section>
+              </td>
+              <td valign="top" style="padding: 0; margin: 0; border: none; vertical-align: top; background-color: ${template.backgroundColor}; word-wrap: break-word; word-break: break-all;">
+                ${inner}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </section>`;
     }).join("");
 
