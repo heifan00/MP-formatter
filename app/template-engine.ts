@@ -694,7 +694,11 @@ export function renderArticle(
   customRenderer.list = function (token: Tokens.List) {
     const ordered = token.ordered;
     const start = token.start || 1;
-    
+    const maxOrderedNumber = start + token.items.length - 1;
+    const orderedMarkerWidth = ordered
+      ? Math.max(template.category === "neo-brutalism" ? 32 : 24, `${maxOrderedNumber}.`.length * 10 + 10)
+      : 24;
+
     const itemsHtml = token.items.map((item, index) => {
       // Use block parser for list item content
       let inner = this.parser.parse(item.tokens);
@@ -713,19 +717,20 @@ export function renderArticle(
       } else if (ordered) {
         const num = start + index;
         if (template.category === "neo-brutalism") {
-          icon = `<section style="display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; background-color: ${template.themeColor}; color: #000000; border: 2px solid #000000; font-size: 12px; font-weight: 900; box-shadow: 2px 2px 0px #000000; box-sizing: border-box; overflow: hidden;">${num}</section>`;
+          const badgeWidth = Math.max(20, String(maxOrderedNumber).length * 9 + 10);
+          icon = `<section style="display: inline-block; min-width: ${badgeWidth}px; height: 20px; line-height: 20px; text-align: center; background-color: ${template.themeColor}; color: #000000; border: 2px solid #000000; font-size: 12px; font-weight: 900; box-shadow: 2px 2px 0px #000000; box-sizing: border-box; overflow: hidden; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">${num}</section>`;
         } else {
-          icon = `<section style="display: inline-block; color: ${template.themeColor}; font-weight: bold; font-family: sans-serif;">${num}.</section>`;
+          icon = `<section style="display: inline-block; color: ${template.themeColor}; font-weight: bold; font-family: sans-serif; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">${num}.</section>`;
         }
       } else {
         icon = template.listIcon;
       }
 
-      const iconWidth = template.category === "neo-brutalism" ? 32 : 24;
+      const iconWidth = ordered ? orderedMarkerWidth : template.category === "neo-brutalism" ? 32 : 24;
 
       // Extremely robust float layout for WeChat Official Accounts
       return `<section style="display: block; clear: both; margin-bottom: 12px;">
-        <section style="float: left; width: ${iconWidth}px; box-sizing: border-box;">
+        <section style="float: left; width: ${iconWidth}px; box-sizing: border-box; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">
           <section style="text-align: left;">${icon}</section>
         </section>
         <section style="margin-left: ${iconWidth}px; box-sizing: border-box; overflow: hidden;">
