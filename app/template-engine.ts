@@ -564,6 +564,102 @@ export function renderArticle(
     return `${trimmed}${trimmed.endsWith(";") ? " " : "; "}background-color: ${template.backgroundColor};`;
   };
 
+  const parseChoiceOptionLine = (lineHtml: string) => {
+    const normalizedLine = lineHtml.replace(/^(?:\s|&nbsp;|&#160;)+/gi, "").trim();
+    const match = normalizedLine.match(/^([A-Za-zＡ-Ｚａ-ｚ])([.．、])\s*([\s\S]*)$/);
+
+    if (!match) return null;
+
+    return {
+      marker: `${match[1]}${match[2]}`,
+      content: match[3].trim() || "&nbsp;",
+    };
+  };
+
+  const extractChoiceOptions = (content: string) => {
+    const lines = content.split(/(?:<br\s*\/?>|\r?\n)/i);
+    const firstOptionIndex = lines.findIndex((line) => parseChoiceOptionLine(line));
+
+    if (firstOptionIndex < 0) return null;
+
+    const optionRows: Array<{ marker: string; content: string }> = [];
+
+    for (const line of lines.slice(firstOptionIndex)) {
+      const optionLine = parseChoiceOptionLine(line);
+      if (!optionLine) break;
+      optionRows.push(optionLine);
+    }
+
+    if (optionRows.length < 2) return null;
+
+    return {
+      beforeContent: lines.slice(0, firstOptionIndex).join("<br>").trim(),
+      afterContent: lines.slice(firstOptionIndex + optionRows.length).join("<br>").trim(),
+      optionRows,
+    };
+  };
+
+  const renderChoiceOptionsTable = (optionRows: Array<{ marker: string; content: string }>) => {
+    const rowPadding = "0 0 6px 0";
+    const markerWidth = 26;
+
+    const rows = optionRows
+      .map(
+        (option) => `<tr>
+              <td width="${markerWidth}" valign="top" style="width: ${markerWidth}px; min-width: ${markerWidth}px; max-width: ${markerWidth}px; padding: ${rowPadding}; margin: 0; border: none; vertical-align: top; color: inherit; background-color: ${template.backgroundColor}; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">
+                <section style="display: block; margin: 0; padding: 0; text-align: left; white-space: nowrap; word-break: keep-all; word-wrap: normal; overflow-wrap: normal;">${option.marker}</section>
+              </td>
+              <td valign="top" style="padding: ${rowPadding}; margin: 0; border: none; vertical-align: top; color: inherit; background-color: ${template.backgroundColor}; text-align: left; word-wrap: break-word; word-break: break-all;">
+                <section style="display: block; margin: 0; padding: 0; text-align: left;">${option.content}</section>
+              </td>
+            </tr>`,
+      )
+      .join("");
+
+    return `<section style="display: block; margin: 0; padding: 0; background-color: ${template.backgroundColor}; text-align: left;">
+          <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; padding: 0; background-color: ${template.backgroundColor};">
+            <tbody>${rows}</tbody>
+          </table>
+        </section>`;
+  };
+
+  const renderChoiceOptionBlocks = (
+    content: string,
+    style: string,
+    blockTag: "p" | "section",
+  ) => {
+    const choiceOptions = extractChoiceOptions(content);
+
+    if (!choiceOptions) return null;
+
+    const beforeStyle = ensureStyleValue(style, "margin", "0 0 8px 0");
+    const beforeBlock = choiceOptions.beforeContent
+      ? `<${blockTag} style="${beforeStyle}">${choiceOptions.beforeContent}</${blockTag}>`
+      : "";
+    const afterBlock = choiceOptions.afterContent
+      ? `<${blockTag} style="${style}">${choiceOptions.afterContent}</${blockTag}>`
+      : "";
+
+    return `${beforeBlock}${renderChoiceOptionsTable(choiceOptions.optionRows)}${afterBlock}`;
+  };
+
+  const stabilizeChoiceOptions = (html: string) =>
+    html.replace(
+      /<p style="([^"]*)">([\s\S]*?)<\/p>/gi,
+      (fullMatch: string, style: string, content: string) =>
+        renderChoiceOptionBlocks(content, style, "p") ?? fullMatch,
+    );
+
+  const stabilizeLooseChoiceOptions = (html: string) => {
+    const looseChoiceStyle = ensureStyleValue(
+      ensureStyleValue(bgFallback(paragraphStyle), "margin", "0 0 8px 0"),
+      "text-indent",
+      "0",
+    );
+
+    return renderChoiceOptionBlocks(html, looseChoiceStyle, "section") ?? html;
+  };
+
   customRenderer.heading = function (token: Tokens.Heading) {
     const depth = token.depth;
     const textHtml = this.parser.parseInline(token.tokens);
@@ -668,7 +764,8 @@ export function renderArticle(
       }
     }
 
-    return html.replace(/^<p[^>]*>/i, `<p style="${bgFallback(paragraphStyle)}">`);
+    const styledHtml = html.replace(/^<p[^>]*>/i, `<p style="${bgFallback(paragraphStyle)}">`);
+    return stabilizeChoiceOptions(styledHtml);
   };
 
   customRenderer.blockquote = function (token: Tokens.Blockquote) {
@@ -708,6 +805,7 @@ export function renderArticle(
         return `<p style="${cleanS}"`;
       });
       inner = inner.replace(/<input disabled="" type="checkbox">/gi, "");
+      inner = stabilizeLooseChoiceOptions(inner);
 
       let icon = "";
       if (item.task) {
