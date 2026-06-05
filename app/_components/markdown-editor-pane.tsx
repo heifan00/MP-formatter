@@ -1,5 +1,6 @@
 import {
   Code2,
+  CodeXml,
   FileText,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -172,10 +173,10 @@ export function MarkdownEditorPane({
         <div className={toolbarSeparatedGroupClass}>
           <button
             onClick={() => insertMarkdown("`", "`", "代码")}
-            className={`${toolbarButtonClass} font-mono text-xs`}
+            className={toolbarButtonClass}
             title="行内代码"
           >
-            &lt;/&gt;
+            <CodeXml className="w-4 h-4 shrink-0" />
           </button>
           <button
             onClick={insertCodeBlock}
