@@ -1,6 +1,6 @@
 import {
-  Code2,
   CodeXml,
+  FileCode,
   FileText,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -183,7 +183,7 @@ export function MarkdownEditorPane({
             className={toolbarButtonClass}
             title="代码块"
           >
-            <Code2 className="w-4 h-4 shrink-0" />
+            <FileCode className="w-4 h-4 shrink-0" />
           </button>
         </div>
         <div className={toolbarSeparatedGroupClass}>
